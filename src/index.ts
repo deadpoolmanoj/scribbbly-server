@@ -48,6 +48,8 @@ io.on(CONNECTION, (socket: Socket) => {
   console.log(`Client connected: ${socket.id}`);
 
   socket.on(JOIN_ROOM, (roomId: string, player: Player) => {
+    console.log('reached join JOIN_ROOM');
+    
     if (!rooms[roomId]) return
 
     socket.join(roomId)
@@ -71,6 +73,8 @@ io.on(CONNECTION, (socket: Socket) => {
     room.players.push(newPlayer)
 
     room.phase = "waiting"
+
+    console.log('emitted rooom updated');
 
     io.to(roomId).emit(ROOM_UPDATED, room)
 
