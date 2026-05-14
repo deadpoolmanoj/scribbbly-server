@@ -175,7 +175,13 @@ io.on(CONNECTION, (socket: Socket) => {
 
         if (isLastDrawer) {
 
-          const isLastRound = false // start here 
+          const isLastRound = room.curRound === room.maxRounds
+
+          if (isLastRound) {
+            showLeaderBoard(room)
+          } else {
+            startNextRound(room)
+          }
 
         } else {
           room.currentDrawerIndex++
@@ -189,8 +195,34 @@ io.on(CONNECTION, (socket: Socket) => {
 
   }
 
-  function showNextRound(room: Room) {
+  function startNextRound(room: Room) {
+    if (room.interval) clearInterval(room.interval)
 
+    room.curRound++
+    room.phase = 'next-round'
+    room.timer = 3
+    room.currentDrawerIndex = 0
+
+    io.to(room.id).emit(ROOM_UPDATED, room)
+
+    room.interval = setInterval(() => {
+      room.timer--
+      // io.to(room.id).emit(TIMER_TICK, room.ticker)
+      if (room.timer <= 0) {
+        clearInterval(room.interval)
+        startSelectingWord(room)
+      }
+    }, TIMER_UNIT);
+
+  }
+
+  function showLeaderBoard(room: Room) {
+    if(room.interval) clearInterval(room.interval)
+
+    room.phase = 'leaderboard'
+    room.timer = 0
+
+    
   }
 
   socket.on(DISCONNECT, () => {
