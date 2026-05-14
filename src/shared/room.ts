@@ -1,4 +1,5 @@
 
+import { Message } from "./messages";
 import { Phase } from "./phase";
 import { Player } from "./player";
 
@@ -8,7 +9,9 @@ export type Room = {
   players: Player[]
 
   phase: Phase
+  
 
+  // set these on start game
   curRound: number
 
   maxRounds: number
@@ -22,4 +25,6 @@ export type Room = {
   timer?: number
 
   interval?: NodeJS.Timeout
+
+  messages? : Message[]
 }

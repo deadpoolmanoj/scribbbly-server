@@ -3,6 +3,10 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
 import { Room } from "./shared/room";
+import { Player } from "./shared/player";
+import { EventEmitterAsyncResource } from "events";
+import { generateBrainrotName } from "./lib/text/all-texts";
+import { CONNECTION, DISCONNECT, JOIN_ROOM, ROOM_UPDATED } from "./shared/socket-names";
 
 const app = express();
 const httpServer = createServer(app);
@@ -36,83 +40,43 @@ app.post("/create-room", (req, res) => {
     phase: 'waiting',
     players: [],
   }
-  
+
   res.json({ roomId });
 });
 
-io.on("connection", (socket: Socket) => {
+io.on(CONNECTION, (socket: Socket) => {
   console.log(`Client connected: ${socket.id}`);
 
-  // socket.on("join-room", (roomId: string) => {
-  //   if (!rooms[roomId]) {
-  //     socket.emit("error", { message: "Room not found" });
-  //     return;
-  //   }
-
-  //   socket.join(roomId);
-  //   console.log(`${socket.id} joined ${roomId}`);
-
-  //   rooms[roomId].countdown = 30;
-
-  //   if (rooms[roomId].interval) {
-  //     clearInterval(rooms[roomId].interval!);
-  //   }
-
-  //   rooms[roomId].interval = setInterval(() => {
-  //     const room = rooms[roomId];
-
-  //     if (room.countdown <= 0) {
-  //       clearInterval(room.interval!);
-  //       room.interval = null;
-  //       io.to(roomId).emit("room-updated", { roomId, countdown: 0, status: "finished" });
-  //       delete rooms[roomId];
-  //       return;
-  //     }
-
-  //     io.to(roomId).emit("room-updated", {
-  //       roomId,
-  //       countdown: room.countdown,
-  //       status: "active",
-  //     });
-
-  //     room.countdown--;
-  //   }, 1000);
-  // });
-
-  socket.on("join-room", (roomId: string) => {
-    if (rooms[roomId]) return
+  socket.on(JOIN_ROOM, (roomId: string, player: Player) => {
+    if (!rooms[roomId]) return
 
     socket.join(roomId)
 
-    const room: { countdown: number; interval: NodeJS.Timeout | null; status: 'Started' | 'Finished' } = rooms[roomId]
+    const room: Room = rooms[roomId]
 
     if (!room) return
 
-    if (room.interval) {
-      clearInterval(room.interval)
+    if (!room.players) {
+      room.players = []
     }
 
-    room.countdown = 30
+    const newPlayer: Player = {
+      id: socket.id,
+      name: player.name ?? generateBrainrotName(),
+      avatarColor: player.avatarColor,
+      isHost: room.players.length === 0 ? true : false,
+      score: 0
+    }
 
-    room.status = "Started"
+    room.players.push(newPlayer)
 
-    const curInterval = setInterval(() => {
+    room.phase = "waiting"
 
-      room.countdown--
-
-      if (room.countdown <= 0) {
-        clearInterval(curInterval)
-        room.status = 'Finished'
-        io.to(roomId).emit('room-updated', room)
-      }
-
-      io.to(roomId).emit('room-updated', room)
-
-    }, 1000);
+    io.to(roomId).emit(ROOM_UPDATED, room)
 
   })
 
-  socket.on("disconnect", () => {
+  socket.on(DISCONNECT, () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
 });
