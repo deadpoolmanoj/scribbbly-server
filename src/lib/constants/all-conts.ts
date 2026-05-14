@@ -1,0 +1,1 @@
+export const TIMER_UNIT = 1000

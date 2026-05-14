@@ -6,7 +6,8 @@ import { Room } from "./shared/room";
 import { Player } from "./shared/player";
 import { EventEmitterAsyncResource } from "events";
 import { generateBrainrotName } from "./lib/text/all-texts";
-import { CONNECTION, DISCONNECT, JOIN_ROOM, ROOM_UPDATED } from "./shared/socket-names";
+import { CONNECTION, DISCONNECT, JOIN_ROOM, ROOM_UPDATED, START_GAME, TIMER_TICK } from "./shared/socket-names";
+import { TIMER_UNIT } from "./lib/constants/all-conts";
 
 const app = express();
 const httpServer = createServer(app);
@@ -82,6 +83,44 @@ io.on(CONNECTION, (socket: Socket) => {
     io.to(roomId).emit(ROOM_UPDATED, room)
 
   })
+
+  socket.on(START_GAME, ({ roomId }) => {
+    const room = rooms[roomId]
+
+    room.curRound = 0
+
+    room.maxRounds = 3
+
+    room.currentDrawerIndex = 0 // set this later imp 
+
+    room.messages = []
+
+    startSelectingWord(room)
+
+  })
+
+  function startSelectingWord(room: Room) {
+    room.phase = 'selecting-word'
+    room.timer = 10
+    room.wordOptions = ['cat', 'pig', 'watch']
+    room.currentWord = ''
+
+    io.to(room.id).emit(ROOM_UPDATED, room)
+
+    room.interval = setInterval(() => {
+      if (room.timer !== undefined) {
+        room.timer--
+        io.to(room.id).emit(TIMER_TICK, room.timer)
+
+        if (room.timer <= 0) {
+          clearInterval(room.interval)
+          room.currentWord = (room.wordOptions ?? [])[0]
+          // start drawing function
+        }
+      }
+    }, TIMER_UNIT);
+
+  }
 
   socket.on(DISCONNECT, () => {
     console.log(`Client disconnected: ${socket.id}`);
