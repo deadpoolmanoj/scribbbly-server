@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
+import { Room } from "./shared/room";
 
 const app = express();
 const httpServer = createServer(app);
@@ -17,7 +18,7 @@ const io = new Server(httpServer, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-const rooms: Record<string, { countdown: number; interval: NodeJS.Timeout | null; status?: 'Started' | 'Finished' }> = {};
+const rooms: Record<string, Room> = {};
 
 app.get("/", (req, res) => {
   res.json({ message: "hello manoj" });
@@ -27,7 +28,15 @@ app.post("/create-room", (req, res) => {
   console.log('reached-here');
 
   const roomId = `room_${Date.now()}`;
-  rooms[roomId] = { countdown: 30, interval: null };
+
+  rooms[roomId] = {
+    id: roomId,
+    curRound: 0,
+    maxRounds: 3, // change this ti a global variable next 
+    phase: 'waiting',
+    players: [],
+  }
+  
   res.json({ roomId });
 });
 
