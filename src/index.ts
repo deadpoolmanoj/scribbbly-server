@@ -8,6 +8,7 @@ import { EventEmitterAsyncResource } from "events";
 import { generateBrainrotName } from "./lib/text/all-texts";
 import { CONNECTION, DISCONNECT, JOIN_ROOM, ROOM_UPDATED, START_GAME, TIMER_TICK } from "./shared/socket-names";
 import { TIMER_UNIT } from "./lib/constants/all-conts";
+import { REPL_MODE_SLOPPY } from "repl";
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,6 +41,11 @@ app.post("/create-room", (req, res) => {
     maxRounds: 3, // change this ti a global variable next 
     phase: 'waiting',
     players: [],
+    turnOrder: [],
+    currentDrawerIndex: 0,
+    timer: 0,
+    currentWord: '',
+    wordOptions: []
   }
 
   res.json({ roomId });
@@ -49,11 +55,12 @@ io.on(CONNECTION, (socket: Socket) => {
   console.log(`Client connected: ${socket.id}`);
 
   socket.on(JOIN_ROOM, (roomId: string, player: Player) => {
-    console.log('reached join JOIN_ROOM');
 
     if (!rooms[roomId]) return
 
     socket.join(roomId)
+
+    socket.data.roomId = roomId
 
     const room: Room = rooms[roomId]
 
@@ -68,7 +75,7 @@ io.on(CONNECTION, (socket: Socket) => {
 
     const newPlayer: Player = {
       id: socket.id,
-      name: player.name ?? generateBrainrotName(),
+      name: player.name ? player.name : generateBrainrotName(),
       avatarColor: player.avatarColor,
       isHost: room.players.length === 0 ? true : false,
       score: 0
@@ -78,10 +85,13 @@ io.on(CONNECTION, (socket: Socket) => {
 
     room.phase = "waiting"
 
-    console.log('emitted rooom updated');
+    if (!room.turnOrder) {
+      room.turnOrder = []
+    }
+
+    room.turnOrder?.push(newPlayer.id)
 
     io.to(roomId).emit(ROOM_UPDATED, room)
-
   })
 
   socket.on(START_GAME, ({ roomId }) => {
@@ -108,22 +118,98 @@ io.on(CONNECTION, (socket: Socket) => {
     io.to(room.id).emit(ROOM_UPDATED, room)
 
     room.interval = setInterval(() => {
-      if (room.timer !== undefined) {
-        room.timer--
-        io.to(room.id).emit(TIMER_TICK, room.timer)
 
-        if (room.timer <= 0) {
-          clearInterval(room.interval)
-          room.currentWord = (room.wordOptions ?? [])[0]
-          // start drawing function
-        }
+      room.timer--
+      io.to(room.id).emit(TIMER_TICK, room.timer)
+
+      if (room.timer <= 0) {
+        clearInterval(room.interval)
+        room.currentWord = (room.wordOptions ?? [])[0]
+        startDrawing(room)
       }
+
     }, TIMER_UNIT);
 
   }
 
+  function startDrawing(room: Room) {
+    room.phase = 'drawing'
+    room.timer = 20
+
+    io.to(room.id).emit(ROOM_UPDATED, room)
+
+    if (room.interval) {
+      clearInterval(room.interval)
+    }
+
+    room.interval = setInterval(() => {
+
+      room.timer--
+      io.to(room.id).emit(TIMER_TICK, room.timer)
+
+      if (room.timer <= 0) {
+        clearInterval(room.interval)
+        showTurnPoints(room)
+      }
+
+    }, TIMER_UNIT);
+  }
+
+  function showTurnPoints(room: Room) {
+    room.phase = 'turn-result'
+    room.timer = 5
+    io.to(room.id).emit(ROOM_UPDATED, room)
+
+    if (room.interval) {
+      clearInterval(room.interval)
+    }
+
+    room.interval = setInterval(() => {
+
+      room.timer--
+      io.to(room.id).emit(TIMER_TICK, room.timer)
+
+      if (room.timer <= 0) {
+        // change turn 
+        const isLastDrawer = room.currentDrawerIndex === room.players.length - 1
+
+        if (isLastDrawer) {
+
+          const isLastRound = false // start here 
+
+        } else {
+          room.currentDrawerIndex++
+          startSelectingWord(room)
+        }
+
+        clearInterval(room.interval)
+      }
+
+    }, TIMER_UNIT);
+
+  }
+
+  function showNextRound(room: Room) {
+
+  }
+
   socket.on(DISCONNECT, () => {
-    console.log(`Client disconnected: ${socket.id}`);
+
+    const roomId = socket.data.roomId
+    if (!roomId) return
+
+    const room = rooms[roomId]
+
+    if (!room) return
+
+    room.players.filter(player => player.id !== socket.id)
+
+    room.turnOrder.filter(id => id !== socket.id)
+
+    io.to(roomId).emit(ROOM_UPDATED, room)
+
+    //  / still lot to do here assigning new host and 
+
   });
 });
 
@@ -131,3 +217,19 @@ const PORT = process.env.PORT || 3000;
 httpServer.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
+
+function getSafeRoom(room: Room) {
+  return {
+    id: room.id,
+    curRound: room.curRound,
+    maxRounds: room.maxRounds,
+    phase: room.phase,
+    players: room.players,
+    turnOrder: room.turnOrder,
+    currentDrawerIndex: room.currentDrawerIndex,
+    currentWord: room.currentWord,
+    wordOptions: room.wordOptions,
+    timer: room.timer,
+    messages: room.messages
+  }
+}

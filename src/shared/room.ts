@@ -9,22 +9,24 @@ export type Room = {
   players: Player[]
 
   phase: Phase
-  
+
+  turnOrder: string[]
 
   // set these on start game
   curRound: number
 
   maxRounds: number
 
-  currentDrawerIndex?: number
+  currentDrawerIndex: number
 
-  currentWord?: string
+  timer: number
+
+  currentWord: string
+
+  wordOptions: string[]
+
   
-  wordOptions?: string[]
-
-  timer?: number
-
   interval?: NodeJS.Timeout
 
-  messages? : Message[]
+  messages?: Message[]
 }
