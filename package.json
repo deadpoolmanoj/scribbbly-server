@@ -4,23 +4,20 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    
     "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-
   "_comment": "this below at first was commonjs",
-  "type": "module",
-  
+  "type": "commonjs",
   "description": "",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "socket.io": "^4.8.3",
-     "typescript": "^6.0.3"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -28,4 +25,3 @@
     "tsx": "^4.22.0"
   }
 }
-
