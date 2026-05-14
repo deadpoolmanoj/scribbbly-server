@@ -49,7 +49,7 @@ io.on(CONNECTION, (socket: Socket) => {
 
   socket.on(JOIN_ROOM, (roomId: string, player: Player) => {
     console.log('reached join JOIN_ROOM');
-    
+
     if (!rooms[roomId]) return
 
     socket.join(roomId)
@@ -61,6 +61,9 @@ io.on(CONNECTION, (socket: Socket) => {
     if (!room.players) {
       room.players = []
     }
+
+    const alreadyInRoom = room.players.some(p => p.id === socket.id)
+    if (alreadyInRoom) return
 
     const newPlayer: Player = {
       id: socket.id,
