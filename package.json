@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "_comment": "this below at first was commonjs",
-  "type": "module",
+  "type": "commonjs",
   "description": "",
   "dependencies": {
     "cors": "^2.8.6",
