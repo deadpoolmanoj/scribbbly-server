@@ -2,6 +2,7 @@
 import { Message } from "./messages";
 import { Phase } from "./phase";
 import { Player } from "./player";
+import { Stroke } from "./stroke";
 
 export type Room = {
   id: string
@@ -25,8 +26,12 @@ export type Room = {
 
   wordOptions: string[]
 
-  
+
   interval?: NodeJS.Timeout
 
   messages?: Message[]
+
+  drawingData?: Stroke[]
+
+  correctGuesses?: string[]
 }
