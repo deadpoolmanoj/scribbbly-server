@@ -2,6 +2,7 @@
 import { Message } from "./messages";
 import { Phase } from "./phase";
 import { Player } from "./player";
+import { Setting } from "./setting";
 import { Stroke } from "./stroke";
 
 export type Room = {
@@ -34,4 +35,6 @@ export type Room = {
   drawingData?: Stroke[]
 
   correctGuesses?: string[]
+
+  setting? : Setting
 }

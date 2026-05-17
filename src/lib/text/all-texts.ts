@@ -21,34 +21,96 @@ export function generateBrainrotName(): string {
   return combined;
 }
 
-const WORD_POOL = [
-  // animals
-  "cat", "dog", "fish", "bird", "frog", "bear", "lion", "duck", "cow", "pig",
-  "horse", "shark", "whale", "crab", "snail", "snake", "wolf", "deer", "fox", "owl",
-  
-  // food
-  "pizza", "burger", "taco", "cake", "donut", "apple", "banana", "carrot", "bread", "egg",
-  "hotdog", "sushi", "cookie", "lemon", "grape", "mushroom", "corn", "cherry", "waffle", "mango",
+const WORD_POOL: Record<LanguageType, string[]> = {
+  ENGLISH: [
+    // animals
+    "cat", "dog", "fish", "bird", "frog", "bear", "lion", "duck", "cow", "pig",
+    "horse", "shark", "whale", "crab", "snail", "snake", "wolf", "deer", "fox", "owl",
+    // food
+    "pizza", "burger", "taco", "cake", "donut", "apple", "banana", "carrot", "bread", "egg",
+    "hotdog", "sushi", "cookie", "lemon", "grape", "mushroom", "corn", "cherry", "waffle", "mango",
+    // vehicles
+    "car", "bus", "boat", "plane", "train", "bike", "rocket", "truck", "yacht", "scooter",
+    // nature
+    "tree", "flower", "cloud", "sun", "moon", "star", "mountain", "river", "volcano", "cactus",
+    "rainbow", "leaf", "wave", "island", "cave",
+    // household
+    "chair", "table", "lamp", "clock", "door", "window", "bed", "sofa", "mirror", "ladder",
+    "bucket", "broom", "candle", "pillow", "curtain",
+    // outdoor / misc
+    "bridge", "castle", "lighthouse", "windmill", "igloo", "tent", "well", "fence", "swing", "slide",
+    // body / clothing
+    "hat", "shoe", "glasses", "crown", "ring", "glove", "boot", "scarf", "umbrella", "backpack",
+  ],
 
-  // vehicles
-  "car", "bus", "boat", "plane", "train", "bike", "rocket", "truck", "yacht", "scooter",
+  FRENCH: [
+    // animaux
+    "chat", "chien", "poisson", "oiseau", "grenouille", "ours", "lion", "canard", "vache", "cochon",
+    "cheval", "requin", "baleine", "crabe", "escargot", "serpent", "loup", "cerf", "renard", "hibou",
+    // nourriture
+    "pizza", "hamburger", "taco", "gâteau", "beignet", "pomme", "banane", "carotte", "pain", "oeuf",
+    "hotdog", "sushi", "biscuit", "citron", "raisin", "champignon", "maïs", "cerise", "gaufre", "mangue",
+    // véhicules
+    "voiture", "bus", "bateau", "avion", "train", "vélo", "fusée", "camion", "yacht", "scooter",
+    // nature
+    "arbre", "fleur", "nuage", "soleil", "lune", "étoile", "montagne", "rivière", "volcan", "cactus",
+    "arc-en-ciel", "feuille", "vague", "île", "grotte",
+    // maison
+    "chaise", "table", "lampe", "horloge", "porte", "fenêtre", "lit", "canapé", "miroir", "échelle",
+    "seau", "balai", "bougie", "oreiller", "rideau",
+    // extérieur
+    "pont", "château", "phare", "moulin", "igloo", "tente", "puits", "clôture", "balançoire", "toboggan",
+    // vêtements
+    "chapeau", "chaussure", "lunettes", "couronne", "bague", "gant", "botte", "écharpe", "parapluie", "sac à dos",
+  ],
 
-  // nature
-  "tree", "flower", "cloud", "sun", "moon", "star", "mountain", "river", "volcano", "cactus",
-  "rainbow", "leaf", "wave", "island", "cave",
+  GERMAN: [
+    // Tiere
+    "Katze", "Hund", "Fisch", "Vogel", "Frosch", "Bär", "Löwe", "Ente", "Kuh", "Schwein",
+    "Pferd", "Hai", "Wal", "Krabbe", "Schnecke", "Schlange", "Wolf", "Hirsch", "Fuchs", "Eule",
+    // Essen
+    "Pizza", "Burger", "Taco", "Kuchen", "Donut", "Apfel", "Banane", "Karotte", "Brot", "Ei",
+    "Hotdog", "Sushi", "Keks", "Zitrone", "Traube", "Pilz", "Mais", "Kirsche", "Waffel", "Mango",
+    // Fahrzeuge
+    "Auto", "Bus", "Boot", "Flugzeug", "Zug", "Fahrrad", "Rakete", "LKW", "Yacht", "Roller",
+    // Natur
+    "Baum", "Blume", "Wolke", "Sonne", "Mond", "Stern", "Berg", "Fluss", "Vulkan", "Kaktus",
+    "Regenbogen", "Blatt", "Welle", "Insel", "Höhle",
+    // Haushalt
+    "Stuhl", "Tisch", "Lampe", "Uhr", "Tür", "Fenster", "Bett", "Sofa", "Spiegel", "Leiter",
+    "Eimer", "Besen", "Kerze", "Kissen", "Vorhang",
+    // Outdoor
+    "Brücke", "Schloss", "Leuchtturm", "Windmühle", "Iglu", "Zelt", "Brunnen", "Zaun", "Schaukel", "Rutsche",
+    // Kleidung
+    "Hut", "Schuh", "Brille", "Krone", "Ring", "Handschuh", "Stiefel", "Schal", "Regenschirm", "Rucksack",
+  ],
 
-  // household
-  "chair", "table", "lamp", "clock", "door", "window", "bed", "sofa", "mirror", "ladder",
-  "bucket", "broom", "candle", "pillow", "curtain",
+  SPANISH: [
+    // animales
+    "gato", "perro", "pez", "pájaro", "rana", "oso", "león", "pato", "vaca", "cerdo",
+    "caballo", "tiburón", "ballena", "cangrejo", "caracol", "serpiente", "lobo", "ciervo", "zorro", "búho",
+    // comida
+    "pizza", "hamburguesa", "taco", "pastel", "dona", "manzana", "banana", "zanahoria", "pan", "huevo",
+    "hotdog", "sushi", "galleta", "limón", "uva", "hongo", "maíz", "cereza", "waffle", "mango",
+    // vehículos
+    "coche", "autobús", "barco", "avión", "tren", "bicicleta", "cohete", "camión", "yate", "scooter",
+    // naturaleza
+    "árbol", "flor", "nube", "sol", "luna", "estrella", "montaña", "río", "volcán", "cactus",
+    "arcoíris", "hoja", "ola", "isla", "cueva",
+    // hogar
+    "silla", "mesa", "lámpara", "reloj", "puerta", "ventana", "cama", "sofá", "espejo", "escalera",
+    "cubo", "escoba", "vela", "almohada", "cortina",
+    // exterior
+    "puente", "castillo", "faro", "molino", "iglú", "tienda", "pozo", "cerca", "columpio", "tobogán",
+    // ropa
+    "sombrero", "zapato", "gafas", "corona", "anillo", "guante", "bota", "bufanda", "paraguas", "mochila",
+  ],
+}
 
-  // outdoor / misc
-  "bridge", "castle", "lighthouse", "windmill", "igloo", "tent", "well", "fence", "swing", "slide",
+export type LanguageType = 'ENGLISH' | 'FRENCH' | 'GERMAN' | 'SPANISH'
 
-  // body / clothing
-  "hat", "shoe", "glasses", "crown", "ring", "glove", "boot", "scarf", "umbrella", "backpack",
-]
-
-export function getRandomWords(): [string, string, string] {
-  const shuffled = [...WORD_POOL].sort(() => Math.random() - 0.5)
+export function getRandomWords(language: LanguageType): [string, string, string] {
+  const pool = WORD_POOL[language]
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
   return [shuffled[0], shuffled[1], shuffled[2]]
 }

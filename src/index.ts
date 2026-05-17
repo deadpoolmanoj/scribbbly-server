@@ -5,9 +5,10 @@ import cors from "cors";
 import { Room } from "./shared/room";
 import { Player } from "./shared/player";
 import { EventEmitterAsyncResource } from "events";
-import { generateBrainrotName, getRandomWords } from "./lib/text/all-texts";
-import { CONNECTION, DISCONNECT, DRAW_LINE, DRAWING_UPDATED, GUESS, JOIN_ROOM, MESSAGES_UPDATED, ROOM_UPDATED, START_GAME, TIMER_TICK, WORD_SELECTED } from "./shared/socket-names";
-import { DRAWING_TIME, ROUND_CHANGING_TIME, ROUNDS, SELECTING_WORD_TIME, TIMER_UNIT, TURN_RESULT_TIME } from "./lib/constants/all-conts";
+import { generateBrainrotName, getRandomWords, LanguageType } from "./lib/text/all-texts";
+import { CONNECTION, DISCONNECT, DRAW_LINE, DRAWING_UPDATED, GUESS, JOIN_ROOM, MESSAGES_UPDATED, ROOM_UPDATED, SETTINGS_CHANGE, SETTINGS_UPDATED, START_GAME, TIMER_TICK, WORD_SELECTED } from "./shared/socket-names";
+import { DRAWING_TIME, MAX_PLAYERS, ROUND_CHANGING_TIME, ROUNDS, SELECTING_WORD_TIME, TIMER_UNIT, TURN_RESULT_TIME } from "./lib/constants/all-conts";
+import { Setting } from "./shared/setting";
 
 type SafeRoom = Omit<Room, 'interval'>
 
@@ -39,7 +40,7 @@ app.post("/create-room", (req, res) => {
   rooms[roomId] = {
     id: roomId,
     curRound: 0,
-    maxRounds: 3, // change this ti a global variable next 
+    maxRounds: 3,
     phase: 'waiting',
     players: [],
     turnOrder: [],
@@ -49,7 +50,13 @@ app.post("/create-room", (req, res) => {
     wordOptions: [],
     messages: [],
     drawingData: [],
-    correctGuesses: []
+    correctGuesses: [],
+    setting: {
+      drawTime: DRAWING_TIME,
+      language: 'ENGLISH',
+      maxPlayers: MAX_PLAYERS,
+      maxRounds: ROUNDS,
+    }
   }
 
   res.json({ roomId });
@@ -57,7 +64,7 @@ app.post("/create-room", (req, res) => {
 
 io.on(CONNECTION, (socket: Socket) => {
 
-  socket.on(JOIN_ROOM, (roomId: string, player: Player) => {
+  socket.on(JOIN_ROOM, (roomId: string, selectedLanguage, player: Player) => {
 
     if (!rooms[roomId]) return
 
@@ -73,8 +80,6 @@ io.on(CONNECTION, (socket: Socket) => {
       room.players = []
     }
 
-    // if (room.phase !== 'waiting') return
-
     const alreadyInRoom = room.players.some(p => p.id === socket.id)
     if (alreadyInRoom) return
 
@@ -86,12 +91,15 @@ io.on(CONNECTION, (socket: Socket) => {
       score: 0
     }
 
+    if (newPlayer.isHost && room.setting) {
+      room.setting.language = selectedLanguage
+    }
+
     room.players.push(newPlayer)
 
     const joinMessage = newPlayer.isHost
       ? `${newPlayer.name} CREATED THE ROOM`
       : `${newPlayer.name} JOINED`
-
 
     room.messages?.push({
       playerId: socket.id,
@@ -114,14 +122,14 @@ io.on(CONNECTION, (socket: Socket) => {
   socket.on(START_GAME, ({ roomId }) => {
     const room = rooms[roomId]
 
-    // if (room.players.length <= 1) {
-    //   newSystemMessage(room, 'ATLEST 2 PLAYERS REQUIRED')
-    //   return
-    // }
+    if (room.players.length <= 1) {
+      newSystemMessage(room, 'ATLEST 2 PLAYERS REQUIRED')
+      return
+    }
 
     room.curRound = 1
 
-    room.maxRounds = ROUNDS
+    // room.maxRounds = ROUNDS
 
     room.currentDrawerIndex = 0
 
@@ -248,11 +256,28 @@ io.on(CONNECTION, (socket: Socket) => {
     socket.broadcast.to(room.id).emit(DRAWING_UPDATED, line)
   })
 
+  socket.on(SETTINGS_CHANGE, (roomId, roomProp: keyof Setting, value) => {
+
+    console.log(roomId, roomProp, value);
+
+
+    const room = rooms[roomId]
+    if (!room) return
+
+    if (!room.setting) {
+      room.setting = {}
+    }
+
+    room.setting[roomProp] = value
+
+    updateRoom(room)
+  })
+
   function startSelectingWord(room: Room) {
     clearRoomInterval(room)
     room.phase = 'selecting-word'
     room.timer = SELECTING_WORD_TIME
-    room.wordOptions = getRandomWords()
+    room.wordOptions = getRandomWords((room.setting?.language ?? 'ENGLISH'))
     room.currentWord = ''
     room.correctGuesses = []
 
@@ -283,7 +308,7 @@ io.on(CONNECTION, (socket: Socket) => {
   function startDrawing(room: Room) {
     clearRoomInterval(room)
     room.phase = 'drawing'
-    room.timer = DRAWING_TIME
+    room.timer = (room.setting?.drawTime ?? DRAWING_TIME)
 
     updateRoom(room)
 
@@ -303,7 +328,7 @@ io.on(CONNECTION, (socket: Socket) => {
   function showTurnPoints(room: Room) {
     clearRoomInterval(room)
 
-     const correctGuessesSnapshot = [...(room.correctGuesses ?? [])]
+    const correctGuessesSnapshot = [...(room.correctGuesses ?? [])]
 
     if ((room.correctGuesses?.length ?? 0) > 0) {
       const drawerId = room.turnOrder[room.currentDrawerIndex]
@@ -317,8 +342,8 @@ io.on(CONNECTION, (socket: Socket) => {
     room.phase = 'turn-result'
     room.timer = TURN_RESULT_TIME
     room.drawingData = []
-    room.correctGuesses= correctGuessesSnapshot
-   
+    room.correctGuesses = correctGuessesSnapshot
+
     updateRoom(room)
 
     room.interval = setInterval(() => {

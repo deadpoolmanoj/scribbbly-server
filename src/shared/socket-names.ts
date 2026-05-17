@@ -20,3 +20,9 @@ export const DRAW_LINE = 'draw-line'
 
 export const DRAWING_UPDATED = 'drawing-updated'
 
+export const SETTINGS_CHANGE = 'settings-change'
+
+export const SETTINGS_UPDATED = 'settings-updated'
+
+
+
