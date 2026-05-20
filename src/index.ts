@@ -4,8 +4,7 @@ import { Server, Socket } from "socket.io";
 import cors from "cors";
 import { Room } from "./shared/room";
 import { Player } from "./shared/player";
-import { EventEmitterAsyncResource } from "events";
-import { generateBrainrotName, getRandomWords, LanguageType } from "./lib/text/all-texts";
+import { generateBrainrotName, getRandomWords } from "./lib/text/all-texts";
 import { CONNECTION, DISCONNECT, DRAW_LINE, DRAWING_UPDATED, GUESS, JOIN_ROOM, MESSAGES_UPDATED, ROOM_UPDATED, SETTINGS_CHANGE, SETTINGS_UPDATED, START_GAME, TIMER_TICK, WORD_SELECTED } from "./shared/socket-names";
 import { DRAWING_TIME, MAX_PLAYERS, ROUND_CHANGING_TIME, ROUNDS, SELECTING_WORD_TIME, TIMER_UNIT, TURN_RESULT_TIME } from "./lib/constants/all-conts";
 import { Setting } from "./shared/setting";
@@ -78,6 +77,10 @@ io.on(CONNECTION, (socket: Socket) => {
 
     if (!room.players) {
       room.players = []
+    }
+
+    if(room.players.length === room.setting?.maxPlayers){
+      return
     }
 
     const alreadyInRoom = room.players.some(p => p.id === socket.id)
@@ -187,7 +190,7 @@ io.on(CONNECTION, (socket: Socket) => {
 
     if (!curPlayer) return
 
-    if (isCorrectGuess) {
+    if (isCorrectGuess && room.phase === 'drawing') {
       room.correctGuesses.push(socket.id)
 
       // points based on guess order
@@ -268,7 +271,9 @@ io.on(CONNECTION, (socket: Socket) => {
       room.setting = {}
     }
 
-    room.setting[roomProp] = value
+    room.setting[roomProp] = roomProp === 'language' ? value : Number(value)
+
+    console.log(room.setting);
 
     updateRoom(room)
   })
@@ -356,7 +361,17 @@ io.on(CONNECTION, (socket: Socket) => {
         const isLastDrawer = room.currentDrawerIndex === room.players.length - 1
 
         if (isLastDrawer) {
-          const isLastRound = room.curRound === room.maxRounds
+          const isLastRound = room.curRound === room.setting?.maxRounds
+
+          console.log(room.curRound);
+          
+          console.log(room.setting);
+          
+
+          console.log(room.maxRounds);
+          
+          console.log(isLastRound);
+          
 
           if (isLastRound) {
             showLeaderBoard(room)
